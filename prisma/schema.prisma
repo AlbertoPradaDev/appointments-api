@@ -5,7 +5,7 @@
 
 generator client {
   provider = "prisma-client-js"
-  output = "../app/generated/prisma"
+  output   = "../app/generated/prisma"
 }
 
 datasource db {
@@ -13,25 +13,26 @@ datasource db {
 }
 
 model Negocio {
-  id        Int       @id @default(autoincrement())
-  nombre    String
-  email     String    @unique
-  apiKey    String    @unique @default(cuid())
-  creadoEn  DateTime  @default(now())
-  citas     Cita[]
-  horarios  Horario[]
+  id               Int              @id @default(autoincrement())
+  nombre           String
+  email            String           @unique
+  apiKey           String           @unique @default(cuid())
+  creadoEn         DateTime         @default(now())
+  citas            Cita[]
+  horarios         Horario[]
+  servicios        Servicio[]
+  pausas           Pausa[]
+  diasBloqueados   DiaBloqueado[]
 }
 
-model Cita {
-  id             Int      @id @default(autoincrement())
-  negocio        Negocio  @relation(fields: [negocioId], references: [id])
-  negocioId      Int
-  nombreCliente  String
-  emailCliente   String
-  fecha          DateTime
-  servicio       String
-  estado         String   @default("pendiente")
-  creadoEn       DateTime @default(now())
+model Servicio {
+  id          Int      @id @default(autoincrement())
+  negocio     Negocio  @relation(fields: [negocioId], references: [id])
+  negocioId   Int
+  nombre      String
+  duracion    Int
+  precio      Float?
+  citas       Cita[]
 }
 
 model Horario {
@@ -41,4 +42,34 @@ model Horario {
   diaSemana   String
   horaInicio  String
   horaFin     String
+}
+
+model Pausa {
+  id          Int      @id @default(autoincrement())
+  negocio     Negocio  @relation(fields: [negocioId], references: [id])
+  negocioId   Int
+  diaSemana   String
+  horaInicio  String
+  horaFin     String
+}
+
+model DiaBloqueado {
+  id          Int      @id @default(autoincrement())
+  negocio     Negocio  @relation(fields: [negocioId], references: [id])
+  negocioId   Int
+  fecha       DateTime
+  motivo      String?
+}
+
+model Cita {
+  id             Int       @id @default(autoincrement())
+  negocio        Negocio   @relation(fields: [negocioId], references: [id])
+  negocioId      Int
+  servicio       Servicio  @relation(fields: [servicioId], references: [id])
+  servicioId     Int
+  nombreCliente  String
+  emailCliente   String
+  fecha          DateTime
+  estado         String    @default("pendiente")
+  creadoEn       DateTime  @default(now())
 }
