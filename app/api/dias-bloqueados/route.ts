@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   if (!fecha) {
     return NextResponse.json(
-      { error: "La fecha es obligatoria" },
+      { error: "A data é obrigatória" },
       { status: 400 }
     );
   }
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   if (isNaN(fechaDate.getTime())) {
     return NextResponse.json(
-      { error: "Formato de fecha inválido. Usa YYYY-MM-DD, ejemplo: 2026-12-25" },
+      { error: "Formato de data inválido. Use YYYY-MM-DD, exemplo: 2026-12-25" },
       { status: 400 }
     );
   }
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   if (diaExistente) {
     return NextResponse.json(
-      { error: "Ese día ya está bloqueado" },
+      { error: "Esse dia já está bloqueado" },
       { status: 409 }
     );
   }
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json(
-    { mensaje: "Día bloqueado correctamente", diaBloqueado },
+    { mensaje: "Dia bloqueado com sucesso", diaBloqueado },
     { status: 201 }
   );
 }
@@ -88,7 +88,7 @@ export async function DELETE(req: NextRequest) {
 
   if (!id) {
     return NextResponse.json(
-      { error: "El id del día bloqueado es obligatorio" },
+      { error: "O id do dia bloqueado é obrigatório" },
       { status: 400 }
     );
   }
@@ -99,7 +99,7 @@ export async function DELETE(req: NextRequest) {
 
   if (!diaBloqueado || diaBloqueado.negocioId !== negocio!.id) {
     return NextResponse.json(
-      { error: "Día bloqueado no encontrado" },
+      { error: "Dia bloqueado não encontrado" },
       { status: 404 }
     );
   }
@@ -108,5 +108,5 @@ export async function DELETE(req: NextRequest) {
     where: { id: parseInt(id) },
   });
 
-  return NextResponse.json({ mensaje: "Día desbloqueado correctamente" });
+  return NextResponse.json({ mensaje: "Dia desbloqueado com sucesso" });
 }

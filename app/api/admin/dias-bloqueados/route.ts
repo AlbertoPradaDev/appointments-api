@@ -4,7 +4,7 @@ import { verificarToken } from "../../../lib/admin-auth";
 
 export async function GET(req: NextRequest) {
   const decoded = verificarToken(req);
-  if (!decoded) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!decoded) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const hoy = new Date();
 
@@ -21,18 +21,18 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const decoded = verificarToken(req);
-  if (!decoded) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!decoded) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const { fecha, motivo } = await req.json();
 
   if (!fecha) {
-    return NextResponse.json({ error: "La fecha es obligatoria" }, { status: 400 });
+    return NextResponse.json({ error: "A data é obrigatória" }, { status: 400 });
   }
 
   const fechaDate = new Date(fecha);
 
   if (isNaN(fechaDate.getTime())) {
-    return NextResponse.json({ error: "Formato de fecha inválido" }, { status: 400 });
+    return NextResponse.json({ error: "Formato de data inválido" }, { status: 400 });
   }
 
   const existente = await prisma.diaBloqueado.findFirst({
@@ -40,32 +40,32 @@ export async function POST(req: NextRequest) {
   });
 
   if (existente) {
-    return NextResponse.json({ error: "Ese día ya está bloqueado" }, { status: 409 });
+    return NextResponse.json({ error: "Esse dia já está bloqueado" }, { status: 409 });
   }
 
   const diaBloqueado = await prisma.diaBloqueado.create({
     data: { fecha: fechaDate, motivo: motivo ?? null, negocioId: decoded.negocioId },
   });
 
-  return NextResponse.json({ mensaje: "Día bloqueado", diaBloqueado }, { status: 201 });
+  return NextResponse.json({ mensaje: "Dia bloqueado", diaBloqueado }, { status: 201 });
 }
 
 export async function DELETE(req: NextRequest) {
   const decoded = verificarToken(req);
-  if (!decoded) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!decoded) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
-  if (!id) return NextResponse.json({ error: "Id obligatorio" }, { status: 400 });
+  if (!id) return NextResponse.json({ error: "Id obrigatório" }, { status: 400 });
 
   const dia = await prisma.diaBloqueado.findUnique({ where: { id: parseInt(id) } });
 
   if (!dia || dia.negocioId !== decoded.negocioId) {
-    return NextResponse.json({ error: "Día no encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "Dia não encontrado" }, { status: 404 });
   }
 
   await prisma.diaBloqueado.delete({ where: { id: parseInt(id) } });
 
-  return NextResponse.json({ mensaje: "Día desbloqueado" });
+  return NextResponse.json({ mensaje: "Dia desbloqueado" });
 }

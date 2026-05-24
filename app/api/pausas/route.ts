@@ -30,28 +30,28 @@ export async function POST(req: NextRequest) {
 
   if (!diaSemana || !horaInicio || !horaFin) {
     return NextResponse.json(
-      { error: "Día, hora de inicio y hora de fin son obligatorios" },
+      { error: "Dia, hora de início e hora de fim são obrigatórios" },
       { status: 400 }
     );
   }
 
   if (!DIAS_VALIDOS.includes(diaSemana.toLowerCase())) {
     return NextResponse.json(
-      { error: `Día inválido. Usa: ${DIAS_VALIDOS.join(", ")}` },
+      { error: `Dia inválido. Use: ${DIAS_VALIDOS.join(", ")}` },
       { status: 400 }
     );
   }
 
   if (!validarHora(horaInicio) || !validarHora(horaFin)) {
     return NextResponse.json(
-      { error: "Formato de hora inválido. Usa HH:MM, ejemplo: 12:00" },
+      { error: "Formato de hora inválido. Use HH:MM, exemplo: 12:00" },
       { status: 400 }
     );
   }
 
   if (horaInicio >= horaFin) {
     return NextResponse.json(
-      { error: "La hora de inicio debe ser anterior a la hora de fin" },
+      { error: "A hora de início deve ser anterior à hora de fim" },
       { status: 400 }
     );
   }
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 
   if (!horario) {
     return NextResponse.json(
-      { error: "No existe horario para ese día, crea uno primero" },
+      { error: "Não existe horário para esse dia, crie um primeiro" },
       { status: 400 }
     );
   }
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
   if (horaInicio < horario.horaInicio || horaFin > horario.horaFin) {
     return NextResponse.json(
       {
-        error: `La pausa debe estar dentro del horario del día: ${horario.horaInicio} - ${horario.horaFin}`,
+        error: `A pausa deve estar dentro do horário do dia: ${horario.horaInicio} - ${horario.horaFin}`,
       },
       { status: 400 }
     );
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json(
-    { mensaje: "Pausa creada correctamente", pausa },
+    { mensaje: "Pausa criada com sucesso", pausa },
     { status: 201 }
   );
 }
@@ -121,7 +121,7 @@ export async function DELETE(req: NextRequest) {
 
   if (!id) {
     return NextResponse.json(
-      { error: "El id de la pausa es obligatorio" },
+      { error: "O id da pausa é obrigatório" },
       { status: 400 }
     );
   }
@@ -132,7 +132,7 @@ export async function DELETE(req: NextRequest) {
 
   if (!pausa || pausa.negocioId !== negocio!.id) {
     return NextResponse.json(
-      { error: "Pausa no encontrada" },
+      { error: "Pausa não encontrada" },
       { status: 404 }
     );
   }
@@ -141,5 +141,5 @@ export async function DELETE(req: NextRequest) {
     where: { id: parseInt(id) },
   });
 
-  return NextResponse.json({ mensaje: "Pausa eliminada correctamente" });
+  return NextResponse.json({ mensaje: "Pausa eliminada com sucesso" });
 }

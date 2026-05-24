@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   const decoded = verificarToken(req);
 
   if (!decoded) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
   const hoy = new Date();
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   ]);
 
   if (!negocio) {
-    return NextResponse.json({ error: "Negocio no encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "Negócio não encontrado" }, { status: 404 });
   }
 
   return NextResponse.json({

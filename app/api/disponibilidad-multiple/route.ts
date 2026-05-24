@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   if (!fechas || !servicioId || !Array.isArray(fechas)) {
     return NextResponse.json(
-      { error: "Fechas y servicioId son obligatorios" },
+      { error: "Datas e servicioId são obrigatórios" },
       { status: 400 }
     );
   }
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
   if (!servicio || servicio.negocioId !== negocio!.id) {
     return NextResponse.json(
-      { error: "Servicio no encontrado" },
+      { error: "Serviço não encontrado" },
       { status: 404 }
     );
   }

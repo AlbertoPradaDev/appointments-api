@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
 
   if (!apiKey || !password) {
     return NextResponse.json(
-      { error: "ApiKey y contraseña son obligatorios" },
+      { error: "ApiKey e senha são obrigatórios" },
       { status: 400 }
     );
   }
@@ -20,14 +20,14 @@ export async function POST(req: NextRequest) {
 
   if (!negocio) {
     return NextResponse.json(
-      { error: "Credenciales inválidas" },
+      { error: "Credenciais inválidas" },
       { status: 401 }
     );
   }
 
   if (!negocio.adminPassword) {
     return NextResponse.json(
-      { error: "Este negocio no tiene contraseña configurada" },
+      { error: "Este negócio não tem senha configurada" },
       { status: 401 }
     );
   }
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   if (!passwordCorrecta) {
     return NextResponse.json(
-      { error: "Credenciales inválidas" },
+      { error: "Credenciais inválidas" },
       { status: 401 }
     );
   }

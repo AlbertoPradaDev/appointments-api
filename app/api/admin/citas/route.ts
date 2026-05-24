@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const decoded = verificarToken(req);
 
   if (!decoded) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
   const { searchParams } = new URL(req.url);
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const decoded = verificarToken(req);
 
   if (!decoded) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
   const body = await req.json();
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
   if (!nombreCliente || !emailCliente || !fecha || !servicioId) {
     return NextResponse.json(
-      { error: "Nombre, email, fecha y servicioId son obligatorios" },
+      { error: "Nome, email, data e servicioId são obrigatórios" },
       { status: 400 }
     );
   }
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
   if (isNaN(fechaDate.getTime())) {
     return NextResponse.json(
-      { error: "Formato de fecha inválido" },
+      { error: "Formato de data inválido" },
       { status: 400 }
     );
   }
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
   if (!servicio || servicio.negocioId !== decoded.negocioId) {
     return NextResponse.json(
-      { error: "Servicio no encontrado" },
+      { error: "Serviço não encontrado" },
       { status: 404 }
     );
   }
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
 
   if (hayConflicto) {
     return NextResponse.json(
-      { error: "Ese horario ya está ocupado" },
+      { error: "Esse horário já está ocupado" },
       { status: 409 }
     );
   }
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json(
-    { mensaje: "Cita creada correctamente", cita },
+    { mensaje: "Consulta criada com sucesso", cita },
     { status: 201 }
   );
 }
@@ -134,7 +134,7 @@ export async function PATCH(req: NextRequest) {
   const decoded = verificarToken(req);
 
   if (!decoded) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
   const { searchParams } = new URL(req.url);
@@ -142,7 +142,7 @@ export async function PATCH(req: NextRequest) {
 
   if (!id) {
     return NextResponse.json(
-      { error: "El id de la cita es obligatorio" },
+      { error: "O id da consulta é obrigatório" },
       { status: 400 }
     );
   }
@@ -154,7 +154,7 @@ export async function PATCH(req: NextRequest) {
 
   if (!cita || cita.negocioId !== decoded.negocioId) {
     return NextResponse.json(
-      { error: "Cita no encontrada" },
+      { error: "Consulta não encontrada" },
       { status: 404 }
     );
   }
@@ -166,7 +166,7 @@ export async function PATCH(req: NextRequest) {
 
   if (!estado || !ESTADOS_VALIDOS.includes(estado)) {
     return NextResponse.json(
-      { error: `Estado inválido. Usa: ${ESTADOS_VALIDOS.join(", ")}` },
+      { error: `Estado inválido. Use: ${ESTADOS_VALIDOS.join(", ")}` },
       { status: 400 }
     );
   }
@@ -182,32 +182,32 @@ export async function PATCH(req: NextRequest) {
   });
 
   const mensajes: Record<string, string> = {
-    confirmada: "ha sido confirmada",
-    cancelada: "ha sido cancelada",
-    pendiente: "está pendiente de confirmación",
+    confirmada: "foi confirmada",
+    cancelada: "foi cancelada",
+    pendiente: "está pendente de confirmação",
   };
 
   await resend.emails.send({
     from: "Reservas <onboarding@resend.dev>",
     to: citaActualizada.emailCliente,
-    subject: `Tu cita en ${negocio!.nombre} ${mensajes[estado]}`,
+    subject: `A sua consulta em ${negocio!.nombre} ${mensajes[estado]}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
-        <h2>Actualización de tu cita</h2>
-        <p>Hola <strong>${citaActualizada.nombreCliente}</strong>,</p>
-        <p>Tu cita <strong>${mensajes[estado]}</strong>.</p>
+        <h2>Atualização da sua consulta</h2>
+        <p>Olá <strong>${citaActualizada.nombreCliente}</strong>,</p>
+        <p>A sua consulta <strong>${mensajes[estado]}</strong>.</p>
         <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <p><strong>Negocio:</strong> ${negocio!.nombre}</p>
-          <p><strong>Servicio:</strong> ${citaActualizada.servicio.nombre}</p>
+          <p><strong>Negócio:</strong> ${negocio!.nombre}</p>
+          <p><strong>Serviço:</strong> ${citaActualizada.servicio.nombre}</p>
           <p><strong>Estado:</strong> ${estado}</p>
         </div>
-        <p>Si tienes alguna duda contacta con nosotros.</p>
+        <p>Se tiver alguma dúvida, entre em contacto connosco.</p>
       </div>
     `,
   });
 
   return NextResponse.json({
-    mensaje: "Cita actualizada correctamente",
+    mensaje: "Consulta atualizada com sucesso",
     cita: citaActualizada,
   });
 }

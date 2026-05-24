@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
   if (!nombreCliente || !emailCliente || !fecha || !servicioId) {
     return NextResponse.json(
-      { error: "Nombre, email, fecha y servicioId son obligatorios" },
+      { error: "Nome, email, data e servicioId são obrigatórios" },
       { status: 400 }
     );
   }
@@ -24,14 +24,14 @@ export async function POST(req: NextRequest) {
 
   if (isNaN(fechaDate.getTime())) {
     return NextResponse.json(
-      { error: "Formato de fecha inválido. Usa YYYY-MM-DDTHH:MM, ejemplo: 2026-06-01T10:00" },
+      { error: "Formato de data inválido. Use YYYY-MM-DDTHH:MM, exemplo: 2026-06-01T10:00" },
       { status: 400 }
     );
   }
 
   if (fechaDate < new Date()) {
     return NextResponse.json(
-      { error: "No puedes agendar citas en el pasado" },
+      { error: "Não pode agendar consultas no passado" },
       { status: 400 }
     );
   }
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
   if (!servicio || servicio.negocioId !== negocio!.id) {
     return NextResponse.json(
-      { error: "Servicio no encontrado" },
+      { error: "Serviço não encontrado" },
       { status: 404 }
     );
   }
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
 
   if (hayConflicto) {
     return NextResponse.json(
-      { error: "Ese horario ya está ocupado" },
+      { error: "Esse horário já está ocupado" },
       { status: 409 }
     );
   }
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(
     {
-      mensaje: "Cita agendada correctamente",
+      mensaje: "Consulta agendada com sucesso",
       cita: {
         id: cita.id,
         nombreCliente: cita.nombreCliente,
@@ -153,7 +153,7 @@ export async function PATCH(req: NextRequest) {
 
   if (!id) {
     return NextResponse.json(
-      { error: "El id de la cita es obligatorio" },
+      { error: "O id da consulta é obrigatório" },
       { status: 400 }
     );
   }
@@ -164,14 +164,14 @@ export async function PATCH(req: NextRequest) {
 
   if (!cita || cita.negocioId !== negocio!.id) {
     return NextResponse.json(
-      { error: "Cita no encontrada" },
+      { error: "Consulta não encontrada" },
       { status: 404 }
     );
   }
 
   if (cita.estado === "cancelada") {
     return NextResponse.json(
-      { error: "Esta cita ya está cancelada" },
+      { error: "Esta consulta já está cancelada" },
       { status: 400 }
     );
   }
@@ -183,7 +183,7 @@ export async function PATCH(req: NextRequest) {
 
   if (!estado || !ESTADOS_VALIDOS.includes(estado)) {
     return NextResponse.json(
-      { error: `Estado inválido. Usa: ${ESTADOS_VALIDOS.join(", ")}` },
+      { error: `Estado inválido. Use: ${ESTADOS_VALIDOS.join(", ")}` },
       { status: 400 }
     );
   }
@@ -195,7 +195,7 @@ export async function PATCH(req: NextRequest) {
   });
 
   return NextResponse.json({
-    mensaje: "Cita actualizada correctamente",
+    mensaje: "Consulta atualizada com sucesso",
     cita: citaActualizada,
   });
 }

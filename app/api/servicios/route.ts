@@ -14,14 +14,14 @@ export async function POST(req: NextRequest) {
 
   if (!nombre || !duracion) {
     return NextResponse.json(
-      { error: "Nombre y duración son obligatorios" },
+      { error: "Nome e duração são obrigatórios" },
       { status: 400 }
     );
   }
 
   if (typeof duracion !== "number" || duracion <= 0) {
     return NextResponse.json(
-      { error: "La duración debe ser un número positivo en minutos" },
+      { error: "A duração deve ser um número positivo em minutos" },
       { status: 400 }
     );
   }
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json(
-    { mensaje: "Servicio creado correctamente", servicio },
+    { mensaje: "Serviço criado com sucesso", servicio },
     { status: 201 }
   );
 }
@@ -67,7 +67,7 @@ export async function DELETE(req: NextRequest) {
 
   if (!id) {
     return NextResponse.json(
-      { error: "El id del servicio es obligatorio" },
+      { error: "O id do serviço é obrigatório" },
       { status: 400 }
     );
   }
@@ -78,7 +78,7 @@ export async function DELETE(req: NextRequest) {
 
   if (!servicio || servicio.negocioId !== negocio!.id) {
     return NextResponse.json(
-      { error: "Servicio no encontrado" },
+      { error: "Serviço não encontrado" },
       { status: 404 }
     );
   }
@@ -87,5 +87,5 @@ export async function DELETE(req: NextRequest) {
     where: { id: parseInt(id) },
   });
 
-  return NextResponse.json({ mensaje: "Servicio eliminado correctamente" });
+  return NextResponse.json({ mensaje: "Serviço eliminado com sucesso" });
 }

@@ -8,7 +8,7 @@ export async function verificarApiKey(req: NextRequest) {
     req.headers.get("X-API-KEY");
 
   if (!apiKey) {
-    return { error: "API key no proporcionada", status: 401, negocio: null };
+    return { error: "API key não fornecida", status: 401, negocio: null };
   }
 
   const negocio = await prisma.negocio.findUnique({

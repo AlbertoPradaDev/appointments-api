@@ -8,14 +8,14 @@ export async function POST(req: NextRequest) {
 
   if (!apiKey || !password) {
     return NextResponse.json(
-      { error: "ApiKey y contraseña son obligatorios" },
+      { error: "ApiKey e senha são obrigatórios" },
       { status: 400 }
     );
   }
 
   if (password.length < 8) {
     return NextResponse.json(
-      { error: "La contraseña debe tener al menos 8 caracteres" },
+      { error: "A senha deve ter pelo menos 8 caracteres" },
       { status: 400 }
     );
   }
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   if (!negocio) {
     return NextResponse.json(
-      { error: "Negocio no encontrado" },
+      { error: "Negócio não encontrado" },
       { status: 404 }
     );
   }
@@ -39,6 +39,6 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({
-    mensaje: "Contraseña configurada correctamente",
+    mensaje: "Senha configurada com sucesso",
   });
 }

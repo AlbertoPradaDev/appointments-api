@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
 
   if (!nombre || !email) {
     return NextResponse.json(
-      { error: "Nombre y email son obligatorios" },
+      { error: "Nome e email são obrigatórios" },
       { status: 400 }
     );
   }
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   if (negocioExistente) {
     return NextResponse.json(
-      { error: "Ya existe un negocio con ese email" },
+      { error: "Já existe um negócio com esse email" },
       { status: 409 }
     );
   }
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(
     {
-      mensaje: "Negocio creado correctamente",
+      mensaje: "Negócio criado com sucesso",
       negocio: {
         id: negocio.id,
         nombre: negocio.nombre,

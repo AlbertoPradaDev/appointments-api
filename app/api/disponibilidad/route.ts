@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   if (!fecha || !servicioId) {
     return NextResponse.json(
-      { error: "Fecha y servicioId son obligatorios" },
+      { error: "Data e servicioId são obrigatórios" },
       { status: 400 }
     );
   }
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
   if (isNaN(fechaDate.getTime())) {
     return NextResponse.json(
-      { error: "Formato de fecha inválido. Usa YYYY-MM-DD" },
+      { error: "Formato de data inválido. Use YYYY-MM-DD" },
       { status: 400 }
     );
   }
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   if (diaBloqueado) {
     return NextResponse.json({
       disponible: false,
-      motivo: diaBloqueado.motivo ?? "Día no disponible",
+      motivo: diaBloqueado.motivo ?? "Dia não disponível",
       huecos: [],
       horasOcupadas: [],
     });
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
   if (!horario) {
     return NextResponse.json({
       disponible: false,
-      motivo: "El negocio no trabaja ese día",
+      motivo: "O negócio não trabalha nesse dia",
       huecos: [],
       horasOcupadas: [],
     });
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
 
   if (!servicio || servicio.negocioId !== negocio!.id) {
     return NextResponse.json(
-      { error: "Servicio no encontrado" },
+      { error: "Serviço não encontrado" },
       { status: 404 }
     );
   }

@@ -30,28 +30,28 @@ export async function POST(req: NextRequest) {
 
   if (!diaSemana || !horaInicio || !horaFin) {
     return NextResponse.json(
-      { error: "Día, hora de inicio y hora de fin son obligatorios" },
+      { error: "Dia, hora de início e hora de fim são obrigatórios" },
       { status: 400 }
     );
   }
 
   if (!DIAS_VALIDOS.includes(diaSemana.toLowerCase())) {
     return NextResponse.json(
-      { error: `Día inválido. Usa: ${DIAS_VALIDOS.join(", ")}` },
+      { error: `Dia inválido. Use: ${DIAS_VALIDOS.join(", ")}` },
       { status: 400 }
     );
   }
 
   if (!validarHora(horaInicio) || !validarHora(horaFin)) {
     return NextResponse.json(
-      { error: "Formato de hora inválido. Usa HH:MM, ejemplo: 08:00" },
+      { error: "Formato de hora inválido. Use HH:MM, exemplo: 08:00" },
       { status: 400 }
     );
   }
 
   if (horaInicio >= horaFin) {
     return NextResponse.json(
-      { error: "La hora de inicio debe ser anterior a la hora de fin" },
+      { error: "A hora de início deve ser anterior à hora de fim" },
       { status: 400 }
     );
   }
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 
   if (horarioExistente) {
     return NextResponse.json(
-      { error: "Ya existe un horario para ese día" },
+      { error: "Já existe um horário para esse dia" },
       { status: 409 }
     );
   }
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json(
-    { mensaje: "Horario creado correctamente", horario },
+    { mensaje: "Horário criado com sucesso", horario },
     { status: 201 }
   );
 }
@@ -112,7 +112,7 @@ export async function DELETE(req: NextRequest) {
 
   if (!id) {
     return NextResponse.json(
-      { error: "El id del horario es obligatorio" },
+      { error: "O id do horário é obrigatório" },
       { status: 400 }
     );
   }
@@ -123,7 +123,7 @@ export async function DELETE(req: NextRequest) {
 
   if (!horario || horario.negocioId !== negocio!.id) {
     return NextResponse.json(
-      { error: "Horario no encontrado" },
+      { error: "Horário não encontrado" },
       { status: 404 }
     );
   }
@@ -132,5 +132,5 @@ export async function DELETE(req: NextRequest) {
     where: { id: parseInt(id) },
   });
 
-  return NextResponse.json({ mensaje: "Horario eliminado correctamente" });
+  return NextResponse.json({ mensaje: "Horário eliminado com sucesso" });
 }
