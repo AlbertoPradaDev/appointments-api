@@ -47,8 +47,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const fechaInicio = fechaDate;
-  const fechaFin = new Date(fechaDate.getTime() + servicio.duracion * 60000);
+  const offsetMs = fechaDate.getTimezoneOffset() * 60000;
+  const fechaLocal = new Date(fechaDate.getTime() - offsetMs);
+
+  const fechaInicio = fechaLocal;
+  const fechaFin = new Date(fechaLocal.getTime() + servicio.duracion * 60000);
 
   const citaExistente = await prisma.cita.findFirst({
     where: {
@@ -58,9 +61,7 @@ export async function POST(req: NextRequest) {
         { fecha: { lt: fechaFin } },
         {
           fecha: {
-            gte: new Date(
-              fechaInicio.getTime() - servicio.duracion * 60000
-            ),
+            gte: new Date(fechaInicio.getTime() - servicio.duracion * 60000),
           },
         },
       ],
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
     data: {
       nombreCliente,
       emailCliente,
-      fecha: fechaDate,
+      fecha: fechaLocal,
       negocioId: negocio!.id,
       servicioId: parseInt(servicioId),
     },
