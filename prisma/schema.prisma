@@ -13,16 +13,17 @@ datasource db {
 }
 
 model Negocio {
-  id               Int              @id @default(autoincrement())
-  nombre           String
-  email            String           @unique
-  apiKey           String           @unique @default(cuid())
-  creadoEn         DateTime         @default(now())
-  citas            Cita[]
-  horarios         Horario[]
-  servicios        Servicio[]
-  pausas           Pausa[]
-  diasBloqueados   DiaBloqueado[]
+  id             Int            @id @default(autoincrement())
+  nombre         String
+  email          String         @unique
+  apiKey         String         @unique @default(cuid())
+  adminPassword  String?
+  creadoEn       DateTime       @default(now())
+  citas          Cita[]
+  horarios       Horario[]
+  servicios      Servicio[]
+  pausas         Pausa[]
+  diasBloqueados DiaBloqueado[]
 }
 
 model Servicio {
