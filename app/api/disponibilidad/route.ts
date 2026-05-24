@@ -95,8 +95,8 @@ export async function GET(req: NextRequest) {
     where: {
       negocioId: negocio!.id,
       fecha: {
-        gte: new Date(`${fecha}T00:00:00`),
-        lte: new Date(`${fecha}T23:59:59`),
+        gte: new Date(`${fecha}T00:00:00.000Z`),
+        lte: new Date(`${fecha}T23:59:59.999Z`),
       },
       estado: { not: "cancelada" },
     },
@@ -124,9 +124,8 @@ export async function GET(req: NextRequest) {
 
   function estaOcupado(inicio: number, fin: number): boolean {
     return citasDelDia.some((cita) => {
-      const citaInicio = new Date(cita.fecha);
-      const citaInicioMin =
-        citaInicio.getHours() * 60 + citaInicio.getMinutes();
+      const citaFecha = new Date(cita.fecha);
+      const citaInicioMin = citaFecha.getUTCHours() * 60 + citaFecha.getUTCMinutes();
       const citaFinMin = citaInicioMin + cita.servicio.duracion;
       return inicio < citaFinMin && fin > citaInicioMin;
     });
