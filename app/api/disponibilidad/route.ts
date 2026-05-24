@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
       disponible: false,
       motivo: diaBloqueado.motivo ?? "Día no disponible",
       huecos: [],
+      horasOcupadas: [],
     });
   }
 
@@ -68,6 +69,7 @@ export async function GET(req: NextRequest) {
       disponible: false,
       motivo: "El negocio no trabaja ese día",
       huecos: [],
+      horasOcupadas: [],
     });
   }
 
@@ -134,11 +136,13 @@ export async function GET(req: NextRequest) {
   const finHorario = horaAMinutos(horario.horaFin);
   const duracion = servicio.duracion;
   const huecos: string[] = [];
+  const horasOcupadas: string[] = [];
 
   for (let inicio = inicioHorario; inicio + duracion <= finHorario; inicio += duracion) {
     const fin = inicio + duracion;
-
-    if (!estaEnPausa(inicio, fin) && !estaOcupado(inicio, fin)) {
+    if (estaEnPausa(inicio, fin) || estaOcupado(inicio, fin)) {
+      horasOcupadas.push(minutosAHora(inicio));
+    } else {
       huecos.push(minutosAHora(inicio));
     }
   }
@@ -150,5 +154,6 @@ export async function GET(req: NextRequest) {
     servicio: servicio.nombre,
     duracion: servicio.duracion,
     huecos,
+    horasOcupadas,
   });
 }
