@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma";
 import { verificarApiKey } from "../../lib/auth";
-import { enviarConfirmacion } from "@/app/lib/emails";
+import { enviarConfirmacion } from "../../lib/email";
 
 export async function POST(req: NextRequest) {
   const { error, status, negocio } = await verificarApiKey(req);
@@ -47,11 +47,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const offsetMs = fechaDate.getTimezoneOffset() * 60000;
-  const fechaLocal = new Date(fechaDate.getTime() - offsetMs);
-
-  const fechaInicio = fechaLocal;
-  const fechaFin = new Date(fechaLocal.getTime() + servicio.duracion * 60000);
+  const fechaInicio = fechaDate;
+  const fechaFin = new Date(fechaDate.getTime() + servicio.duracion * 60000);
 
   const citaExistente = await prisma.cita.findFirst({
     where: {
@@ -80,7 +77,7 @@ export async function POST(req: NextRequest) {
     data: {
       nombreCliente,
       emailCliente,
-      fecha: fechaLocal,
+      fecha: fechaDate,
       negocioId: negocio!.id,
       servicioId: parseInt(servicioId),
     },
