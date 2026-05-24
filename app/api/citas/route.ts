@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma";
 import { verificarApiKey } from "../../lib/auth";
-import { enviarConfirmacion } from "../../lib/email";
+import { enviarConfirmacion } from "@/app/lib/emails";
 
 export async function POST(req: NextRequest) {
   const { error, status, negocio } = await verificarApiKey(req);
@@ -47,26 +47,29 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const fechaInicio = fechaDate;
-  const fechaFin = new Date(fechaDate.getTime() + servicio.duracion * 60000);
-
-  const citaExistente = await prisma.cita.findFirst({
+  const citasDelDia = await prisma.cita.findMany({
     where: {
       negocioId: negocio!.id,
       estado: { not: "cancelada" },
-      AND: [
-        { fecha: { lt: fechaFin } },
-        {
-          fecha: {
-            gte: new Date(fechaInicio.getTime() - servicio.duracion * 60000),
-          },
-        },
-      ],
+      fecha: {
+        gte: new Date(`${fecha.split("T")[0]}T00:00:00`),
+        lte: new Date(`${fecha.split("T")[0]}T23:59:59`),
+      },
     },
     include: { servicio: true },
   });
 
-  if (citaExistente) {
+  const inicioNueva = fechaDate.getUTCHours() * 60 + fechaDate.getUTCMinutes();
+  const finNueva = inicioNueva + servicio.duracion;
+
+  const hayConflicto = citasDelDia.some((cita) => {
+    const citaInicio = new Date(cita.fecha);
+    const citaInicioMin = citaInicio.getUTCHours() * 60 + citaInicio.getUTCMinutes();
+    const citaFinMin = citaInicioMin + cita.servicio.duracion;
+    return inicioNueva < citaFinMin && finNueva > citaInicioMin;
+  });
+
+  if (hayConflicto) {
     return NextResponse.json(
       { error: "Ese horario ya está ocupado" },
       { status: 409 }
