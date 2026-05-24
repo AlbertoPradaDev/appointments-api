@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma";
 import { verificarApiKey } from "../../lib/auth";
+import { enviarConfirmacion } from "@/app/lib/emails";
 
 export async function POST(req: NextRequest) {
   const { error, status, negocio } = await verificarApiKey(req);
@@ -83,6 +84,15 @@ export async function POST(req: NextRequest) {
       servicioId: parseInt(servicioId),
     },
     include: { servicio: true },
+  });
+
+  await enviarConfirmacion({
+    nombreCliente: cita.nombreCliente,
+    emailCliente: cita.emailCliente,
+    nombreNegocio: negocio!.nombre,
+    servicio: cita.servicio.nombre,
+    fecha: cita.fecha,
+    duracion: cita.servicio.duracion,
   });
 
   return NextResponse.json(
