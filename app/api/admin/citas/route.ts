@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { verificarToken } from "../../../lib/admin-auth";
 import { enviarConfirmacion } from "@/app/lib/emails";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function GET(req: NextRequest) {
   const decoded = verificarToken(req);
@@ -146,6 +149,7 @@ export async function PATCH(req: NextRequest) {
 
   const cita = await prisma.cita.findUnique({
     where: { id: parseInt(id) },
+    include: { servicio: true },
   });
 
   if (!cita || cita.negocioId !== decoded.negocioId) {
@@ -171,6 +175,35 @@ export async function PATCH(req: NextRequest) {
     where: { id: parseInt(id) },
     data: { estado },
     include: { servicio: true },
+  });
+
+  const negocio = await prisma.negocio.findUnique({
+    where: { id: decoded.negocioId },
+  });
+
+  const mensajes: Record<string, string> = {
+    confirmada: "ha sido confirmada",
+    cancelada: "ha sido cancelada",
+    pendiente: "está pendiente de confirmación",
+  };
+
+  await resend.emails.send({
+    from: "Reservas <onboarding@resend.dev>",
+    to: citaActualizada.emailCliente,
+    subject: `Tu cita en ${negocio!.nombre} ${mensajes[estado]}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+        <h2>Actualización de tu cita</h2>
+        <p>Hola <strong>${citaActualizada.nombreCliente}</strong>,</p>
+        <p>Tu cita <strong>${mensajes[estado]}</strong>.</p>
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p><strong>Negocio:</strong> ${negocio!.nombre}</p>
+          <p><strong>Servicio:</strong> ${citaActualizada.servicio.nombre}</p>
+          <p><strong>Estado:</strong> ${estado}</p>
+        </div>
+        <p>Si tienes alguna duda contacta con nosotros.</p>
+      </div>
+    `,
   });
 
   return NextResponse.json({
