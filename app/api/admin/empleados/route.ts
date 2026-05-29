@@ -69,13 +69,30 @@ export async function DELETE(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "Id obrigatório" }, { status: 400 });
 
-  const empleado = await prisma.empleado.findUnique({ where: { id: parseInt(id) } });
+  const empId = parseInt(id);
+
+  const empleado = await prisma.empleado.findUnique({ where: { id: empId } });
 
   if (!empleado || empleado.negocioId !== decoded.negocioId) {
     return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
   }
 
-  await prisma.empleado.delete({ where: { id: parseInt(id) } });
+  try {
+    await prisma.$transaction([
+      prisma.cita.deleteMany({ where: { empleadoId: empId } }),
+      prisma.servicio.deleteMany({ where: { empleadoId: empId } }),
+      prisma.horario.deleteMany({ where: { empleadoId: empId } }),
+      prisma.pausa.deleteMany({ where: { empleadoId: empId } }),
+      prisma.diaBloqueado.deleteMany({ where: { empleadoId: empId } }),
+      prisma.empleado.delete({ where: { id: empId } }),
+    ]);
+  } catch (e) {
+    console.error("Error al eliminar funcionário:", e);
+    return NextResponse.json(
+      { error: "Não foi possível eliminar o funcionário. Tenta novamente." },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({ mensaje: "Funcionário eliminado" });
 }
