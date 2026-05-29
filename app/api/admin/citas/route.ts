@@ -13,6 +13,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const fecha = searchParams.get("fecha");
   const empleadoId = searchParams.get("empleadoId");
+  const skip = Math.max(0, parseInt(searchParams.get("skip") || "0"));
+  const take = Math.min(100, Math.max(1, parseInt(searchParams.get("take") || "10")));
 
   const where: any = { negocioId: decoded.negocioId };
 
@@ -27,13 +29,18 @@ export async function GET(req: NextRequest) {
     where.empleadoId = parseInt(empleadoId);
   }
 
-  const citas = await prisma.cita.findMany({
-    where,
-    include: { servicio: true, empleado: true },
-    orderBy: { fecha: "asc" },
-  });
+  const [citas, total] = await prisma.$transaction([
+    prisma.cita.findMany({
+      where,
+      include: { servicio: true, empleado: true },
+      orderBy: { fecha: "asc" },
+      skip,
+      take,
+    }),
+    prisma.cita.count({ where }),
+  ]);
 
-  return NextResponse.json({ citas });
+  return NextResponse.json({ citas, total });
 }
 
 export async function POST(req: NextRequest) {
