@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const fecha = searchParams.get("fecha");
+  const fechaDesde = searchParams.get("fechaDesde");
   const empleadoId = searchParams.get("empleadoId");
   const skip = Math.max(0, parseInt(searchParams.get("skip") || "0"));
   const take = Math.min(100, Math.max(1, parseInt(searchParams.get("take") || "10")));
@@ -19,10 +20,14 @@ export async function GET(req: NextRequest) {
   const where: any = { negocioId: decoded.negocioId };
 
   if (fecha) {
+    // Specific day selected on calendar
     where.fecha = {
       gte: new Date(`${fecha}T00:00:00`),
       lte: new Date(`${fecha}T23:59:59`),
     };
+  } else if (fechaDesde) {
+    // No day selected → show from this date onwards
+    where.fecha = { gte: new Date(`${fechaDesde}T00:00:00`) };
   }
 
   if (empleadoId) {
