@@ -6,9 +6,20 @@ export async function GET(req: NextRequest) {
   const decoded = verificarToken(req);
   if (!decoded) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  const servicios = await prisma.servicio.findMany({
-    where: { negocioId: decoded.negocioId },
-  });
+  const { searchParams } = new URL(req.url);
+  const empleadoId = searchParams.get("empleadoId");
+
+  if (!empleadoId) {
+    return NextResponse.json({ error: "empleadoId é obrigatório" }, { status: 400 });
+  }
+
+  const empleado = await prisma.empleado.findUnique({ where: { id: parseInt(empleadoId) } });
+
+  if (!empleado || empleado.negocioId !== decoded.negocioId) {
+    return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
+  }
+
+  const servicios = await prisma.servicio.findMany({ where: { empleadoId: empleado.id } });
 
   return NextResponse.json({ servicios });
 }
@@ -17,17 +28,20 @@ export async function POST(req: NextRequest) {
   const decoded = verificarToken(req);
   if (!decoded) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  const { nombre, duracion, precio } = await req.json();
+  const { nombre, duracion, precio, empleadoId } = await req.json();
 
-  if (!nombre || !duracion) {
-    return NextResponse.json(
-      { error: "Nome e duração são obrigatórios" },
-      { status: 400 }
-    );
+  if (!nombre || !duracion || !empleadoId) {
+    return NextResponse.json({ error: "Nome, duração e empleadoId são obrigatórios" }, { status: 400 });
+  }
+
+  const empleado = await prisma.empleado.findUnique({ where: { id: parseInt(empleadoId) } });
+
+  if (!empleado || empleado.negocioId !== decoded.negocioId) {
+    return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
   }
 
   const servicio = await prisma.servicio.create({
-    data: { nombre, duracion, precio: precio ?? null, negocioId: decoded.negocioId },
+    data: { nombre, duracion, precio: precio ?? null, empleadoId: empleado.id },
   });
 
   return NextResponse.json({ mensaje: "Serviço criado", servicio }, { status: 201 });
@@ -42,9 +56,12 @@ export async function DELETE(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "Id obrigatório" }, { status: 400 });
 
-  const servicio = await prisma.servicio.findUnique({ where: { id: parseInt(id) } });
+  const servicio = await prisma.servicio.findUnique({
+    where: { id: parseInt(id) },
+    include: { empleado: true },
+  });
 
-  if (!servicio || servicio.negocioId !== decoded.negocioId) {
+  if (!servicio || servicio.empleado.negocioId !== decoded.negocioId) {
     return NextResponse.json({ error: "Serviço não encontrado" }, { status: 404 });
   }
 

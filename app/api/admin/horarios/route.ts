@@ -9,8 +9,21 @@ export async function GET(req: NextRequest) {
   const decoded = verificarToken(req);
   if (!decoded) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
+  const { searchParams } = new URL(req.url);
+  const empleadoId = searchParams.get("empleadoId");
+
+  if (!empleadoId) {
+    return NextResponse.json({ error: "empleadoId é obrigatório" }, { status: 400 });
+  }
+
+  const empleado = await prisma.empleado.findUnique({ where: { id: parseInt(empleadoId) } });
+
+  if (!empleado || empleado.negocioId !== decoded.negocioId) {
+    return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
+  }
+
   const horarios = await prisma.horario.findMany({
-    where: { negocioId: decoded.negocioId },
+    where: { empleadoId: empleado.id },
     orderBy: { id: "asc" },
   });
 
@@ -21,9 +34,9 @@ export async function POST(req: NextRequest) {
   const decoded = verificarToken(req);
   if (!decoded) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  const { diaSemana, horaInicio, horaFin } = await req.json();
+  const { diaSemana, horaInicio, horaFin, empleadoId } = await req.json();
 
-  if (!diaSemana || !horaInicio || !horaFin) {
+  if (!diaSemana || !horaInicio || !horaFin || !empleadoId) {
     return NextResponse.json({ error: "Todos os campos são obrigatórios" }, { status: 400 });
   }
 
@@ -39,8 +52,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "A hora de início deve ser anterior à de fim" }, { status: 400 });
   }
 
+  const empleado = await prisma.empleado.findUnique({ where: { id: parseInt(empleadoId) } });
+
+  if (!empleado || empleado.negocioId !== decoded.negocioId) {
+    return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
+  }
+
   const existente = await prisma.horario.findFirst({
-    where: { negocioId: decoded.negocioId, diaSemana: diaSemana.toLowerCase() },
+    where: { empleadoId: empleado.id, diaSemana: diaSemana.toLowerCase() },
   });
 
   if (existente) {
@@ -48,7 +67,7 @@ export async function POST(req: NextRequest) {
   }
 
   const horario = await prisma.horario.create({
-    data: { diaSemana: diaSemana.toLowerCase(), horaInicio, horaFin, negocioId: decoded.negocioId },
+    data: { diaSemana: diaSemana.toLowerCase(), horaInicio, horaFin, empleadoId: empleado.id },
   });
 
   return NextResponse.json({ mensaje: "Horário criado", horario }, { status: 201 });
@@ -63,9 +82,12 @@ export async function DELETE(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "Id obrigatório" }, { status: 400 });
 
-  const horario = await prisma.horario.findUnique({ where: { id: parseInt(id) } });
+  const horario = await prisma.horario.findUnique({
+    where: { id: parseInt(id) },
+    include: { empleado: true },
+  });
 
-  if (!horario || horario.negocioId !== decoded.negocioId) {
+  if (!horario || horario.empleado.negocioId !== decoded.negocioId) {
     return NextResponse.json({ error: "Horário não encontrado" }, { status: 404 });
   }
 

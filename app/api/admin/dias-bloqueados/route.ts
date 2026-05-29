@@ -6,13 +6,21 @@ export async function GET(req: NextRequest) {
   const decoded = verificarToken(req);
   if (!decoded) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  const hoy = new Date();
+  const { searchParams } = new URL(req.url);
+  const empleadoId = searchParams.get("empleadoId");
+
+  if (!empleadoId) {
+    return NextResponse.json({ error: "empleadoId é obrigatório" }, { status: 400 });
+  }
+
+  const empleado = await prisma.empleado.findUnique({ where: { id: parseInt(empleadoId) } });
+
+  if (!empleado || empleado.negocioId !== decoded.negocioId) {
+    return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
+  }
 
   const diasBloqueados = await prisma.diaBloqueado.findMany({
-    where: {
-      negocioId: decoded.negocioId,
-      fecha: { gte: hoy },
-    },
+    where: { empleadoId: empleado.id, fecha: { gte: new Date() } },
     orderBy: { fecha: "asc" },
   });
 
@@ -23,10 +31,10 @@ export async function POST(req: NextRequest) {
   const decoded = verificarToken(req);
   if (!decoded) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  const { fecha, motivo } = await req.json();
+  const { fecha, motivo, empleadoId } = await req.json();
 
-  if (!fecha) {
-    return NextResponse.json({ error: "A data é obrigatória" }, { status: 400 });
+  if (!fecha || !empleadoId) {
+    return NextResponse.json({ error: "A data e empleadoId são obrigatórios" }, { status: 400 });
   }
 
   const fechaDate = new Date(fecha);
@@ -35,8 +43,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Formato de data inválido" }, { status: 400 });
   }
 
+  const empleado = await prisma.empleado.findUnique({ where: { id: parseInt(empleadoId) } });
+
+  if (!empleado || empleado.negocioId !== decoded.negocioId) {
+    return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
+  }
+
   const existente = await prisma.diaBloqueado.findFirst({
-    where: { negocioId: decoded.negocioId, fecha: fechaDate },
+    where: { empleadoId: empleado.id, fecha: fechaDate },
   });
 
   if (existente) {
@@ -44,7 +58,7 @@ export async function POST(req: NextRequest) {
   }
 
   const diaBloqueado = await prisma.diaBloqueado.create({
-    data: { fecha: fechaDate, motivo: motivo ?? null, negocioId: decoded.negocioId },
+    data: { fecha: fechaDate, motivo: motivo ?? null, empleadoId: empleado.id },
   });
 
   return NextResponse.json({ mensaje: "Dia bloqueado", diaBloqueado }, { status: 201 });
@@ -59,9 +73,12 @@ export async function DELETE(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "Id obrigatório" }, { status: 400 });
 
-  const dia = await prisma.diaBloqueado.findUnique({ where: { id: parseInt(id) } });
+  const dia = await prisma.diaBloqueado.findUnique({
+    where: { id: parseInt(id) },
+    include: { empleado: true },
+  });
 
-  if (!dia || dia.negocioId !== decoded.negocioId) {
+  if (!dia || dia.empleado.negocioId !== decoded.negocioId) {
     return NextResponse.json({ error: "Dia não encontrado" }, { status: 404 });
   }
 

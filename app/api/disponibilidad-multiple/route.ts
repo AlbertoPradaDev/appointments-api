@@ -2,45 +2,42 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma";
 import { verificarApiKey } from "../../lib/auth";
 
+const DIAS = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+
+function horaAMinutos(hora: string): number {
+  const [h, m] = hora.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minutosAHora(minutos: number): string {
+  const h = Math.floor(minutos / 60);
+  const m = minutos % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 export async function POST(req: NextRequest) {
   const { error, status, negocio } = await verificarApiKey(req);
+  if (error) return NextResponse.json({ error }, { status });
 
-  if (error) {
-    return NextResponse.json({ error }, { status });
-  }
+  const { fechas, servicioId, empleadoId } = await req.json();
 
-  const body = await req.json();
-  const { fechas, servicioId } = body;
-
-  if (!fechas || !servicioId || !Array.isArray(fechas)) {
+  if (!fechas || !servicioId || !empleadoId || !Array.isArray(fechas)) {
     return NextResponse.json(
-      { error: "Datas e servicioId são obrigatórios" },
+      { error: "Datas, servicioId e empleadoId são obrigatórios" },
       { status: 400 }
     );
   }
 
-  const servicio = await prisma.servicio.findUnique({
-    where: { id: parseInt(servicioId) },
-  });
+  const empleado = await prisma.empleado.findUnique({ where: { id: parseInt(empleadoId) } });
 
-  if (!servicio || servicio.negocioId !== negocio!.id) {
-    return NextResponse.json(
-      { error: "Serviço não encontrado" },
-      { status: 404 }
-    );
+  if (!empleado || empleado.negocioId !== negocio!.id) {
+    return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
   }
 
-  const DIAS = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+  const servicio = await prisma.servicio.findUnique({ where: { id: parseInt(servicioId) } });
 
-  function horaAMinutos(hora: string): number {
-    const [h, m] = hora.split(":").map(Number);
-    return h * 60 + m;
-  }
-
-  function minutosAHora(minutos: number): string {
-    const h = Math.floor(minutos / 60);
-    const m = minutos % 60;
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  if (!servicio || servicio.empleadoId !== empleado.id) {
+    return NextResponse.json({ error: "Serviço não encontrado" }, { status: 404 });
   }
 
   const resultados = await Promise.all(
@@ -50,17 +47,17 @@ export async function POST(req: NextRequest) {
 
       const [diaBloqueado, horario, pausas, citasDelDia] = await Promise.all([
         prisma.diaBloqueado.findFirst({
-          where: { negocioId: negocio!.id, fecha: fechaDate },
+          where: { empleadoId: empleado.id, fecha: fechaDate },
         }),
         prisma.horario.findFirst({
-          where: { negocioId: negocio!.id, diaSemana },
+          where: { empleadoId: empleado.id, diaSemana },
         }),
         prisma.pausa.findMany({
-          where: { negocioId: negocio!.id, diaSemana },
+          where: { empleadoId: empleado.id, diaSemana },
         }),
         prisma.cita.findMany({
           where: {
-            negocioId: negocio!.id,
+            empleadoId: empleado.id,
             fecha: {
               gte: new Date(`${fecha}T00:00:00.000Z`),
               lte: new Date(`${fecha}T23:59:59.999Z`),
@@ -107,12 +104,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      return {
-        fecha,
-        disponible: huecos.length > 0,
-        huecos,
-        horasOcupadas,
-      };
+      return { fecha, disponible: huecos.length > 0, huecos, horasOcupadas };
     })
   );
 

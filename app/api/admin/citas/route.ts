@@ -8,13 +8,11 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function GET(req: NextRequest) {
   const decoded = verificarToken(req);
-
-  if (!decoded) {
-    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-  }
+  if (!decoded) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const fecha = searchParams.get("fecha");
+  const empleadoId = searchParams.get("empleadoId");
 
   const where: any = { negocioId: decoded.negocioId };
 
@@ -25,9 +23,13 @@ export async function GET(req: NextRequest) {
     };
   }
 
+  if (empleadoId) {
+    where.empleadoId = parseInt(empleadoId);
+  }
+
   const citas = await prisma.cita.findMany({
     where,
-    include: { servicio: true },
+    include: { servicio: true, empleado: true },
     orderBy: { fecha: "asc" },
   });
 
@@ -36,17 +38,13 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const decoded = verificarToken(req);
+  if (!decoded) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  if (!decoded) {
-    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-  }
+  const { nombreCliente, emailCliente, fecha, servicioId, empleadoId } = await req.json();
 
-  const body = await req.json();
-  const { nombreCliente, emailCliente, fecha, servicioId } = body;
-
-  if (!nombreCliente || !emailCliente || !fecha || !servicioId) {
+  if (!nombreCliente || !emailCliente || !fecha || !servicioId || !empleadoId) {
     return NextResponse.json(
-      { error: "Nome, email, data e servicioId são obrigatórios" },
+      { error: "Nome, email, data, servicioId e empleadoId são obrigatórios" },
       { status: 400 }
     );
   }
@@ -54,26 +52,24 @@ export async function POST(req: NextRequest) {
   const fechaDate = new Date(fecha);
 
   if (isNaN(fechaDate.getTime())) {
-    return NextResponse.json(
-      { error: "Formato de data inválido" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Formato de data inválido" }, { status: 400 });
   }
 
-  const servicio = await prisma.servicio.findUnique({
-    where: { id: parseInt(servicioId) },
-  });
+  const empleado = await prisma.empleado.findUnique({ where: { id: parseInt(empleadoId) } });
 
-  if (!servicio || servicio.negocioId !== decoded.negocioId) {
-    return NextResponse.json(
-      { error: "Serviço não encontrado" },
-      { status: 404 }
-    );
+  if (!empleado || empleado.negocioId !== decoded.negocioId) {
+    return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
+  }
+
+  const servicio = await prisma.servicio.findUnique({ where: { id: parseInt(servicioId) } });
+
+  if (!servicio || servicio.empleadoId !== empleado.id) {
+    return NextResponse.json({ error: "Serviço não encontrado" }, { status: 404 });
   }
 
   const citasDelDia = await prisma.cita.findMany({
     where: {
-      negocioId: decoded.negocioId,
+      empleadoId: empleado.id,
       estado: { not: "cancelada" },
       fecha: {
         gte: new Date(`${fecha.split("T")[0]}T00:00:00`),
@@ -94,15 +90,10 @@ export async function POST(req: NextRequest) {
   });
 
   if (hayConflicto) {
-    return NextResponse.json(
-      { error: "Esse horário já está ocupado" },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: "Esse horário já está ocupado" }, { status: 409 });
   }
 
-  const negocio = await prisma.negocio.findUnique({
-    where: { id: decoded.negocioId },
-  });
+  const negocio = await prisma.negocio.findUnique({ where: { id: decoded.negocioId } });
 
   const cita = await prisma.cita.create({
     data: {
@@ -110,6 +101,7 @@ export async function POST(req: NextRequest) {
       emailCliente,
       fecha: fechaDate,
       negocioId: decoded.negocioId,
+      empleadoId: empleado.id,
       servicioId: parseInt(servicioId),
     },
     include: { servicio: true },
@@ -124,28 +116,17 @@ export async function POST(req: NextRequest) {
     duracion: cita.servicio.duracion,
   });
 
-  return NextResponse.json(
-    { mensaje: "Consulta criada com sucesso", cita },
-    { status: 201 }
-  );
+  return NextResponse.json({ mensaje: "Consulta criada com sucesso", cita }, { status: 201 });
 }
 
 export async function PATCH(req: NextRequest) {
   const decoded = verificarToken(req);
-
-  if (!decoded) {
-    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-  }
+  if (!decoded) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
-  if (!id) {
-    return NextResponse.json(
-      { error: "O id da consulta é obrigatório" },
-      { status: 400 }
-    );
-  }
+  if (!id) return NextResponse.json({ error: "O id da consulta é obrigatório" }, { status: 400 });
 
   const cita = await prisma.cita.findUnique({
     where: { id: parseInt(id) },
@@ -153,15 +134,10 @@ export async function PATCH(req: NextRequest) {
   });
 
   if (!cita || cita.negocioId !== decoded.negocioId) {
-    return NextResponse.json(
-      { error: "Consulta não encontrada" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Consulta não encontrada" }, { status: 404 });
   }
 
-  const body = await req.json();
-  const { estado } = body;
-
+  const { estado } = await req.json();
   const ESTADOS_VALIDOS = ["pendiente", "confirmada", "cancelada"];
 
   if (!estado || !ESTADOS_VALIDOS.includes(estado)) {
@@ -177,9 +153,7 @@ export async function PATCH(req: NextRequest) {
     include: { servicio: true },
   });
 
-  const negocio = await prisma.negocio.findUnique({
-    where: { id: decoded.negocioId },
-  });
+  const negocio = await prisma.negocio.findUnique({ where: { id: decoded.negocioId } });
 
   const mensajes: Record<string, string> = {
     confirmada: "foi confirmada",
@@ -206,8 +180,5 @@ export async function PATCH(req: NextRequest) {
     `,
   });
 
-  return NextResponse.json({
-    mensaje: "Consulta atualizada com sucesso",
-    cita: citaActualizada,
-  });
+  return NextResponse.json({ mensaje: "Consulta atualizada com sucesso", cita: citaActualizada });
 }

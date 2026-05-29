@@ -2,20 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma";
 import { verificarApiKey } from "../../lib/auth";
 
+const DIAS = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+
+function horaAMinutos(hora: string): number {
+  const [h, m] = hora.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minutosAHora(minutos: number): string {
+  const h = Math.floor(minutos / 60);
+  const m = minutos % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 export async function GET(req: NextRequest) {
   const { error, status, negocio } = await verificarApiKey(req);
-
-  if (error) {
-    return NextResponse.json({ error }, { status });
-  }
+  if (error) return NextResponse.json({ error }, { status });
 
   const { searchParams } = new URL(req.url);
   const fecha = searchParams.get("fecha");
   const servicioId = searchParams.get("servicioId");
+  const empleadoId = searchParams.get("empleadoId");
 
-  if (!fecha || !servicioId) {
+  if (!fecha || !servicioId || !empleadoId) {
     return NextResponse.json(
-      { error: "Data e servicioId são obrigatórios" },
+      { error: "Data, servicioId e empleadoId são obrigatórios" },
       { status: 400 }
     );
   }
@@ -23,17 +34,23 @@ export async function GET(req: NextRequest) {
   const fechaDate = new Date(fecha);
 
   if (isNaN(fechaDate.getTime())) {
-    return NextResponse.json(
-      { error: "Formato de data inválido. Use YYYY-MM-DD" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Formato de data inválido. Use YYYY-MM-DD" }, { status: 400 });
+  }
+
+  const empleado = await prisma.empleado.findUnique({ where: { id: parseInt(empleadoId) } });
+
+  if (!empleado || empleado.negocioId !== negocio!.id) {
+    return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
+  }
+
+  const servicio = await prisma.servicio.findUnique({ where: { id: parseInt(servicioId) } });
+
+  if (!servicio || servicio.empleadoId !== empleado.id) {
+    return NextResponse.json({ error: "Serviço não encontrado" }, { status: 404 });
   }
 
   const diaBloqueado = await prisma.diaBloqueado.findFirst({
-    where: {
-      negocioId: negocio!.id,
-      fecha: fechaDate,
-    },
+    where: { empleadoId: empleado.id, fecha: fechaDate },
   });
 
   if (diaBloqueado) {
@@ -45,55 +62,28 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const DIAS = [
-    "domingo",
-    "lunes",
-    "martes",
-    "miercoles",
-    "jueves",
-    "viernes",
-    "sabado",
-  ];
-
   const diaSemana = DIAS[fechaDate.getDay()];
 
   const horario = await prisma.horario.findFirst({
-    where: {
-      negocioId: negocio!.id,
-      diaSemana,
-    },
+    where: { empleadoId: empleado.id, diaSemana },
   });
 
   if (!horario) {
     return NextResponse.json({
       disponible: false,
-      motivo: "O negócio não trabalha nesse dia",
+      motivo: "O funcionário não trabalha nesse dia",
       huecos: [],
       horasOcupadas: [],
     });
   }
 
-  const servicio = await prisma.servicio.findUnique({
-    where: { id: parseInt(servicioId) },
-  });
-
-  if (!servicio || servicio.negocioId !== negocio!.id) {
-    return NextResponse.json(
-      { error: "Serviço não encontrado" },
-      { status: 404 }
-    );
-  }
-
   const pausas = await prisma.pausa.findMany({
-    where: {
-      negocioId: negocio!.id,
-      diaSemana,
-    },
+    where: { empleadoId: empleado.id, diaSemana },
   });
 
   const citasDelDia = await prisma.cita.findMany({
     where: {
-      negocioId: negocio!.id,
+      empleadoId: empleado.id,
       fecha: {
         gte: new Date(`${fecha}T00:00:00.000Z`),
         lte: new Date(`${fecha}T23:59:59.999Z`),
@@ -102,17 +92,6 @@ export async function GET(req: NextRequest) {
     },
     include: { servicio: true },
   });
-
-  function horaAMinutos(hora: string): number {
-    const [h, m] = hora.split(":").map(Number);
-    return h * 60 + m;
-  }
-
-  function minutosAHora(minutos: number): string {
-    const h = Math.floor(minutos / 60);
-    const m = minutos % 60;
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-  }
 
   function estaEnPausa(inicio: number, fin: number): boolean {
     return pausas.some((pausa) => {

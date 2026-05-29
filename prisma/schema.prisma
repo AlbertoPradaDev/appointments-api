@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
   output   = "../app/generated/prisma"
@@ -13,64 +8,78 @@ datasource db {
 }
 
 model Negocio {
+  id            Int       @id @default(autoincrement())
+  nombre        String
+  email         String    @unique
+  apiKey        String    @unique @default(cuid())
+  adminPassword String?
+  creadoEn      DateTime  @default(now())
+  empleados     Empleado[]
+  citas         Cita[]
+}
+
+model Empleado {
   id             Int            @id @default(autoincrement())
+  negocio        Negocio        @relation(fields: [negocioId], references: [id])
+  negocioId      Int
   nombre         String
-  email          String         @unique
-  apiKey         String         @unique @default(cuid())
-  adminPassword  String?
+  email          String?
+  telefono       String?
   creadoEn       DateTime       @default(now())
-  citas          Cita[]
-  horarios       Horario[]
   servicios      Servicio[]
+  horarios       Horario[]
   pausas         Pausa[]
   diasBloqueados DiaBloqueado[]
+  citas          Cita[]
 }
 
 model Servicio {
-  id          Int      @id @default(autoincrement())
-  negocio     Negocio  @relation(fields: [negocioId], references: [id])
-  negocioId   Int
-  nombre      String
-  duracion    Int
-  precio      Float?
-  citas       Cita[]
+  id         Int      @id @default(autoincrement())
+  empleado   Empleado @relation(fields: [empleadoId], references: [id])
+  empleadoId Int
+  nombre     String
+  duracion   Int
+  precio     Float?
+  citas      Cita[]
 }
 
 model Horario {
-  id          Int      @id @default(autoincrement())
-  negocio     Negocio  @relation(fields: [negocioId], references: [id])
-  negocioId   Int
-  diaSemana   String
-  horaInicio  String
-  horaFin     String
+  id         Int      @id @default(autoincrement())
+  empleado   Empleado @relation(fields: [empleadoId], references: [id])
+  empleadoId Int
+  diaSemana  String
+  horaInicio String
+  horaFin    String
 }
 
 model Pausa {
-  id          Int      @id @default(autoincrement())
-  negocio     Negocio  @relation(fields: [negocioId], references: [id])
-  negocioId   Int
-  diaSemana   String
-  horaInicio  String
-  horaFin     String
+  id         Int      @id @default(autoincrement())
+  empleado   Empleado @relation(fields: [empleadoId], references: [id])
+  empleadoId Int
+  diaSemana  String
+  horaInicio String
+  horaFin    String
 }
 
 model DiaBloqueado {
-  id          Int      @id @default(autoincrement())
-  negocio     Negocio  @relation(fields: [negocioId], references: [id])
-  negocioId   Int
-  fecha       DateTime
-  motivo      String?
+  id         Int      @id @default(autoincrement())
+  empleado   Empleado @relation(fields: [empleadoId], references: [id])
+  empleadoId Int
+  fecha      DateTime
+  motivo     String?
 }
 
 model Cita {
-  id             Int       @id @default(autoincrement())
-  negocio        Negocio   @relation(fields: [negocioId], references: [id])
-  negocioId      Int
-  servicio       Servicio  @relation(fields: [servicioId], references: [id])
-  servicioId     Int
-  nombreCliente  String
-  emailCliente   String
-  fecha          DateTime
-  estado         String    @default("pendiente")
-  creadoEn       DateTime  @default(now())
+  id            Int      @id @default(autoincrement())
+  negocio       Negocio  @relation(fields: [negocioId], references: [id])
+  negocioId     Int
+  empleado      Empleado @relation(fields: [empleadoId], references: [id])
+  empleadoId    Int
+  servicio      Servicio @relation(fields: [servicioId], references: [id])
+  servicioId    Int
+  nombreCliente String
+  emailCliente  String
+  fecha         DateTime
+  estado        String   @default("pendiente")
+  creadoEn      DateTime @default(now())
 }
